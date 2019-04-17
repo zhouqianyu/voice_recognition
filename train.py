@@ -1,8 +1,8 @@
 from file_import import *
 from VrModel import *
 
-AUDIO_PATH = '/Users/zhouqianyu/resources/data_thchs30/train'
-LABEL_PATH = '/Users/zhouqianyu/resources/data_thchs30/data'
+AUDIO_PATH = './data_thchs30/train'
+LABEL_PATH = './data_thchs30/data'
 model_save_path = 'saver/'
 model_name = 'vr_model.ckpt'
 
