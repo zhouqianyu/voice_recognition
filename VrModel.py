@@ -73,9 +73,9 @@ class VrModel:
         layer3 = tf.reshape(layer3, [-1, BATCH_SIZE, N_HIDDEN_3])  # 换成三维的时序优先进入循环神经网络层
         # 双向循环神经网络层
         with tf.variable_scope('bi-rnn'):
-            lstm_cell_fw = tf.nn.rnn_cell.BasicLSTMCell(N_CELL)
+            lstm_cell_fw = tf.nn.rnn_cell.LSTMCell(N_CELL)
             lstm_cell_fw = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_fw, input_keep_prob=self.keep_dropout)
-            lstm_cell_bw = tf.nn.rnn_cell.BasicLSTMCell(N_CELL)
+            lstm_cell_bw = tf.nn.rnn_cell.LSTMCell(N_CELL)
             lstm_cell_bw = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_bw, input_keep_prob=self.keep_dropout)
 
             outputs, self.state = tf.nn.bidirectional_dynamic_rnn(cell_fw=lstm_cell_fw,
@@ -106,6 +106,7 @@ class VrModel:
             moving_average_op = moving_average.apply(tf.trainable_variables())
             self.avg_loss = tf.reduce_mean(tf.nn.ctc_loss(self.targets, logits, self.seq_length))  # 利用ctc计算loss
             loss = self.avg_loss
+            tf.summary.scalar('loss', loss)
             train = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step=self.global_step)
 
             with tf.control_dependencies([moving_average_op, train]):
@@ -115,15 +116,15 @@ class VrModel:
 
         self.decode, log_prob = tf.nn.ctc_beam_search_decoder(logits, self.seq_length, merge_repeated=False)
         # 计算与正确结果之间的编辑距离
-        self.distance = tf.reduce_mean(tf.edit_distance(tf.cast(self.decode[0], tf.int32), self.targets)) #开始速度超级慢
+        self.distance = tf.reduce_mean(tf.edit_distance(tf.cast(self.decode[0], tf.int32), self.targets))  # 开始速度超级慢
 
         # 其中decode[0] 为一个稀疏矩阵
 
-    def run(self, sess, dict_map, eval=False):
+    def run(self, sess, dict_map, merged, eval=False):
         if self.is_training:
-            _, avg_loss, global_step = sess.run([self.train_op,
-                                                 self.avg_loss, self.global_step], feed_dict=dict_map)
-            return avg_loss, global_step
+            _, avg_loss, global_step, rs = sess.run([self.train_op,
+                                                     self.avg_loss, self.global_step, merged], feed_dict=dict_map)
+            return avg_loss, global_step, rs
         else:
             if eval:
                 result, distance = sess.run([self.decode[0], self.distance], feed_dict=dict_map)
@@ -131,6 +132,7 @@ class VrModel:
             else:
                 result = sess.run(self.decode[0], feed_dict=dict_map)
                 return result
+
 
 if __name__ == '__main__':
     print(tf.__version__)
