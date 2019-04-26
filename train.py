@@ -24,7 +24,7 @@ def main(argv=None):
             train_cost = 0
             itr = iter(next_batch(BATCH_SIZE, audios, labels, NUMCEP, N_CONTEXT, word_num_map))
             for batch_step, (input_labels, lens, targets) in enumerate(itr):
-                print("开始获取数据%d" % (batch_step))
+                # print("开始获取数据%d" % (batch_step))
                 dict_map = {train_model.inputs: input_labels,
                             train_model.targets: targets,
                             train_model.seq_length: lens,
@@ -32,10 +32,10 @@ def main(argv=None):
                 avg_loss, global_step, rs = train_model.run(sess, dict_map, merged)
                 train_cost += avg_loss
                 writer.add_summary(rs, global_step)
-                if batch_step % 1 == 0:
+                if batch_step % 10 == 0:
                     print('目前正在进行第%d轮，第%d次迭代，总轮数%d, 当前损失率为%f' % (train_step + 1,
                                                           batch_step + 1, global_step, avg_loss / (batch_step + 1)))
-                if batch_step % 100 == 0:
+                if global_step % 100 == 0:
                     saver.save(sess, os.path.join(model_save_path, model_name), global_step)
 
 
