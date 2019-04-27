@@ -1,8 +1,7 @@
 from file_import import *
 from VrModel import *
-
-AUDIO_PATH = '/Users/zhouqianyu/Desktop/data_thchs30/train'
-LABEL_PATH = '/Users/zhouqianyu/Desktop/data_thchs30/data'
+AUDIO_PATH = '../data_thchs30/train'
+LABEL_PATH = '../data_thchs30/data'
 model_save_path = 'saver/'
 model_name = 'vr_model.ckpt'
 
@@ -13,7 +12,6 @@ def main(argv=None):
     train_model = VrModel(True, len(audios), len(words) + 1)  # +1是给ctc的blank label
     saver = tf.train.Saver()
     ckpt = tf.train.get_checkpoint_state(model_save_path)
-    f = open('./log.txt', 'a')
     with tf.Session() as sess:
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
@@ -30,16 +28,17 @@ def main(argv=None):
                             train_model.targets: targets,
                             train_model.seq_length: lens,
                             train_model.keep_dropout: KEEP_DROPOUT_RATE}
-                avg_loss, global_step, rs, test = train_model.run(sess, dict_map, merged)
+                avg_loss, global_step, rs = train_model.run(sess, dict_map, merged)
                 train_cost += avg_loss
                 writer.add_summary(rs, global_step)
                 if batch_step % 1 == 0:
                     print('目前正在进行第%d轮，第%d次迭代，总轮数%d, 当前损失率为%f' % (train_step + 1,
                                                           batch_step + 1, global_step, train_cost / (batch_step + 1)))
 
-                    print('目前正在进行第%d轮，第%d次迭代，总轮数%d, 当前损失率为%f' % (train_step + 1,
-                                                                 batch_step + 1, global_step,
-                                                                 train_cost / (batch_step + 1)), file=f, flush=True)
+                    with open('./log.txt','a') as f:
+                        print('目前正在进行第%d轮，第%d次迭代，总轮数%d, 当前损失率为%f' % (train_step + 1,
+                                                                     batch_step + 1, global_step,
+                                                                     train_cost / (batch_step + 1)), file=f, flush=True)
                 if global_step % 100 == 0:
                     saver.save(sess, os.path.join(model_save_path, model_name), global_step)
 
