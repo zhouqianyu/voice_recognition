@@ -3,8 +3,8 @@ from deep_learning import *
 LEANING_RATE = 0.001  # 初始学习率
 LEANING_RATE_DECAY = 0.98  # 学习率衰减
 
-REGULARIZATION_RATE = 0.0001  # 正则化系数
-MOVING_AVERAGE_DECAY = 0.99  # 滑动平均模型参数
+REGULARIZATION_RATE = 0.00001  # 正则化系数
+MOVING_AVERAGE_DECAY = 0.9995  # 滑动平均模型参数
 
 TRAINING_EPOCH = 100  # 迭代次数(完整过一遍数据)
 
@@ -51,6 +51,8 @@ class VrModel:
             if is_training:
                 layer1 = tf.nn.dropout(layer1, self.keep_dropout)
                 tf.add_to_collection('losses', regularizer(w1))
+                tf.summary.histogram('b1', b1)
+                tf.summary.histogram('w1', w1)
 
         # 第二层全连接神经网络
         with tf.variable_scope('fc2'):
@@ -60,6 +62,8 @@ class VrModel:
             if is_training:
                 layer2 = tf.nn.dropout(layer2, self.keep_dropout)
                 tf.add_to_collection('losses', regularizer(w2))
+                tf.summary.histogram('b2', b2)
+                tf.summary.histogram('w2', w2)
 
         # 第三层全连接神经网路
         with tf.variable_scope('fc3'):
@@ -69,6 +73,8 @@ class VrModel:
             if is_training:
                 layer3 = tf.nn.dropout(layer3, self.keep_dropout)
                 tf.add_to_collection('losses', regularizer(w3))
+                tf.summary.histogram('b3', b3)
+                tf.summary.histogram('w3', w3)
 
         layer3 = tf.reshape(layer3, [-1, BATCH_SIZE, N_HIDDEN_3])  # 换成三维的时序优先进入循环神经网络层
         # 双向循环神经网络层
@@ -92,6 +98,8 @@ class VrModel:
             if is_training:
                 tf.nn.dropout(layer5, self.keep_dropout)
                 tf.add_to_collection('losses', regularizer(w5))
+                tf.summary.histogram('b5', b5)
+                tf.summary.histogram('w5', w5)
 
         # 连向输出层
         with tf.variable_scope('fc6'):
@@ -100,11 +108,14 @@ class VrModel:
             layer6 = tf.matmul(layer5, w6) + b6
             if is_training:
                 tf.add_to_collection('losses', regularizer(w6))
+                tf.summary.histogram('b6', b6)
+                tf.summary.histogram('w6', w6)
 
         logits = tf.reshape(layer6, [-1, BATCH_SIZE, vacab_size])  # 转化成时序优先输出
         if is_training:
             moving_average_op = moving_average.apply(tf.trainable_variables())
-            self.avg_loss = tf.reduce_mean(tf.nn.ctc_loss(self.targets, logits, self.seq_length))  # 利用ctc计算loss
+            self.avg_loss = tf.reduce_mean(tf.nn.ctc_loss(self.targets, logits, self.seq_length)) \
+                            + tf.add_n(tf.get_collection('losses'))  # 利用ctc计算loss
             loss = self.avg_loss
             tf.summary.scalar('loss', loss)
             train = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step=self.global_step)
