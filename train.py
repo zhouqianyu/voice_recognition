@@ -31,7 +31,7 @@ def main(argv=None):
                 avg_loss, global_step, rs = train_model.run(sess, dict_map, merged)
                 train_cost += avg_loss
                 writer.add_summary(rs, global_step)
-                if batch_step % 1 == 0:
+                if batch_step % 10 == 0:
                     print('目前正在进行第%d轮，第%d次迭代，总轮数%d, 当前损失率为%f' % (train_step + 1,
                                                           batch_step + 1, global_step, train_cost / (batch_step + 1)))
 
