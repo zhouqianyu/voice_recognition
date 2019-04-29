@@ -49,10 +49,10 @@ def generate_words_table(labels):
         words += [word for word in label]
     couter = Counter(words)
     words = sorted(couter)
-    print(words)
+    # print(words)
     length = len(words)
     words_num_map = dict(zip(words, range(length)))
-    print(words_num_map)
+    # print(words_num_map)
     return words, words_num_map  # 返回正反向字典
 
 
